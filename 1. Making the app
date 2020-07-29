@@ -1,1 +1,199 @@
+make the model, in big letter. it is the schema. pg ggmitin schema sa api route, need gumamit ng new Post sample.
+
+alt shid d copy
+ctrl d find next
+
 1. initialize server.js, package.json
+2. connect to mongoDB atlas, click connect to application.
+    2.1 make a config folder then make default.json
+    2.2 make a db.js and connect mongoose and export the module
+    2.3 import it to server.js
+3. make routes folder and api sub folder
+    3.1 make auth, post, user, profile.js
+    3.2 // Define routes. yung /api/users e yung sa http un
+        app.use('/api/users', require('./routes/api/users'))
+4. create models folder
+    4.1 create user.js and schema
+    const mongoose = require('mongoose')
+
+      const UserSchema = new mongoose.Schema({
+        name: {
+          type: String,
+          required: true
+        },
+        email: {
+          type: String,
+          required: true,
+          unique: true
+        },
+        password: {
+          type: String,
+          required: true
+        },
+        avatar: {
+          type: String
+        },
+        date: {
+          type: Date,
+          default: Date.now
+        }
+      })
+
+      module.exports = User = mongoose.model('user', UserSchema)
+5. Make the user.js API
+      router.post('/', [
+        check('name', 'Name is required').not().isEmpty(),
+        check('email', 'Please include a valid email').isEmail(),
+        check('password', 'Password should be 6 or more characters').isLength({ min: 6 })
+      ], async (req, res) => {
+        const errors = validationResult(req)
+        if (!errors.isEmpty()) {
+          return res.status(400).json({ errors: errors.array() })
+        }
+        const { name, email, password } = req.body
+
+        try {
+          // See if user exists
+          let user = await User.findOne({ email: email })
+          if (user) {
+            return res.status(400).json({
+              errors: [{
+                msg:
+                  'User already exists'
+              }]
+            })
+          }
+          // Get users gravatar size, rating, default
+          const avatar = gravatar.url(email, {
+            s: '200',
+            r: 'pg',
+            d: 'mm'
+          })
+          user = new User({
+            name: name,
+            email,
+            avatar,
+            password
+          })
+          // encrypt password
+          const salt = await bcrypt.genSalt(10);
+          user.password = await bcrypt.hash(password, salt)
+          await user.save()
+          // Return jsonwebtoken to access protected route, so you can only edit your profile
+          const payload = {
+            user: {
+              id: user.id
+            }
+          }
+          jwt.sign(payload, config.get('jwtSecret'), {
+            expiresIn: 360000
+          }, (err, token) => {
+            if (err) throw err;
+            res.json({ token: token })
+          })
+        } catch (e) {
+          console.log(e.message)
+          res.status(500).send('Server error')
+        }
+      })
+
+6. Middleware. If you want to check if it is authenticated, just import auth and put it in as 2nd arguement
+    // middleware to authenticate user and access protected route
+    module.exports = function (req, res, next) {
+      // x-auth is just a convention
+      const token = req.header('x-auth-token')
+
+      if (!token) {
+        return res.status(401).json({ msg: 'No token, authorization denied' })
+      }
+
+      try {
+        const decoded = jwt.verify(token, config.get('jwtSecret'))
+
+        req.user = decoded.user
+        next()
+      } catch (err) {
+        return res.status(401).json({ msg: 'Token is not valid' })
+      }
+    }
+
+    then use it in auth.js in api/auth
+    update api/auth
+
+7. create models/Profile.js then you can use it in api/profile
+8. Edit api/profile and add check and validationResult
+    check for req.body, pull out everything from the body const { fb, skills etc} = req.body}
+    build a profilefields object to insert in the object, initialize social object, look of a profile, it found, update and send the new profile, if not , create anew profile, save and send back profile
+9. Delete profile and user
+10.Add Posts.js model schema and post route
+
+
+
+React
+1. Install all dependency, clean the files
+2. write a src/component
+
+Connecting react to node
+Proxy in package.json use so in axios get need not to include locathost.....
+1. Import axios, create all the lading, navbar, register, login js files
+2. create store.js
+  boiler plate
+      import { createStore, applyMiddleware } from 'redux'
+      import { composeWithDevTools } from 'redux-devtools-extension'
+      import thunk from 'redux-thunk'
+      import rootReducer from './reducers'
+
+      const initialState = {}
+
+      const middleware = [thunk]
+
+      const store = createStore(
+        rootReducer,
+        initialState,
+        composeWithDevTools(applyMiddleware(...middleware))
+      )
+
+      export default store
+3. Import provider, store to app.js
+4. make an action and reducer folder
+
+REDUX
+a. anytime you want to interact to redux state or function, you should always import connect
+b. register everytime you use connect. sample, Register.propstypes
+c. Actions are imported to the components, and it will pass the info to be used by actions to reducers
+1. Make a reducer folder, set index.js and alert.js. then make an action folder, with alert and types.js. In actions/alert.js, the type: SET_ALERT is what will be resolved in reducers/alert.js in case SET_ALERT
+2. when using the redux, import connect and put export default connect()(Register) below, like in Register.js
+3. Make an Alert.js component
+  // we want to map the redux state(setAlert) so if there is a redux state, we can use it as props here.
+  // Also, in reducers/index.js we have alert, so it is the name of the state. that is why we use props.alert
+  const mapStateToProps = state => ({
+    alerts: props.alert
+  })
+
+
+AUTH reducer
+1. Make a reducer/auth.js
+2. make action/auth.js
+3. import it to Register.js and add it to proptypes
+4. import auth to reducers/index.js
+
+React authentication token, if logged in and logout after some time
+1. Make a new types USER_LOADED, AUTH_ERROR. check if token is available
+2. make a src/utils/setAuthToken.js
+3. import to actions/auth.js load user
+4. make a reducer/auth.js cases
+5. import to App.js the function laoduser
+
+LOGIN in react
+1. make a login action, then types, then reducers
+2. Use it in Login.js by first importing connect to access redux state
+  import { connect } from ' react-redux'
+  import PropTypes from 'prop-types'
+  import { login } from '../../reducers/auth'
+3. Make a Dashboard component and private routing
+
+Profile reducers and current profile
+
+Make Dashboard/Dashboard
+Make Dashboard/DashboardActions
+Make profileforms/EditProfile
