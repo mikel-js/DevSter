@@ -1,0 +1,7 @@
+{
+  "mongoURI": "mongodb+srv://mikel:thykel17@socmed.laoun.mongodb.net/<dbname>?retryWrites=true&w=majority",
+  "jwtSecret": "jwtsecrettoken",
+  "githubClientId": "5d8c912d57935bbe7cab",
+  "githubSecret": "e124128e6b97ab06343cf4d227131978d9b49fb4",
+  "githubToken": " 6a182e66e3d065bc27e44d2556b5acc18ae657c5"
+}
